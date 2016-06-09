@@ -29,12 +29,16 @@ class ChatServer extends Actor {
 
   protected def sessionManagement: Receive = {
     case Login(username) =>
-      print(this, "User [%s] has logged in".format(username))
+      println(this, "User [%s] has logged in".format(username))
       val session = context.actorOf(Props(classOf[Session], username, storage))
+      context.watch(session)
       sessions += (username -> session)
 
     case Logout(username) =>
-      print(this, "User [%s] has logout ".format(username))
+      val session = sessions(username)
+      context.stop(session)
+      sessions.-=(username)
+      println(this, "User [%s] has logout ".format(username))
   }
 
   protected def chatManagement: Receive = {

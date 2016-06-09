@@ -13,6 +13,7 @@ class MemoryChatStorage extends ChatStorage {
   //self.lifeCycle = Permanent
  
   private var chatLog : List[String] = List()
+  
   val log = Logging(context.system, this)
   log.info("Memory-based chat storage is starting up...")
  
