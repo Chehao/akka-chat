@@ -19,6 +19,7 @@ class Sender extends Actor {
 
   def receive: Actor.Receive = {
     case msg: GetChatLog => chat forward msg
+    case msg: ChatMessage => chat forward msg
     case msg: Event => chat ! msg
     case _ => println("unknow message")
   }
@@ -53,17 +54,21 @@ object ChatClient {
         }
         case _ => {
           //userLog ::= message
-          client ! ChatMessage(name,name + ": " + message)
-          val future = (client ? GetChatLog(name))
-          val result = Await.result(future, timeout.duration).asInstanceOf[ChatLog]
-          //println("result msg count :"+result.log.length)
+          val fu1  = client ? ChatMessage(name,name + ": " + message)
+          val result = Await.result(fu1, timeout.duration).asInstanceOf[ChatLog]
           print("\u001b\u0063")
           result.log.reverse.foreach { x => println(x) }
+          //val future = (client ? GetChatLog(name))
+          //val result = Await.result(future, timeout.duration).asInstanceOf[ChatLog]
+          //println("result msg count :"+result.log.length)
+          //print("\u001b\u0063")
+          //result.log.reverse.foreach { x => println(x) }
 
         }
       }
     }
     println("bye bye " + name)
+    
     system.terminate()
 
   }
