@@ -13,7 +13,7 @@ object ChatServer {
   def main(args: Array[String]): Unit = {
     val system = ActorSystem("RemoteSystem", ConfigFactory.load("server"))
     val actor = system.actorOf(Props[ChatServer], "server")
-    
+
   }
 }
 
@@ -21,21 +21,22 @@ class ChatServer extends Actor {
 
   val storage: ActorRef = context.actorOf(Props[MemoryChatStorage], "storage")
   val sessions: HashMap[String, ActorRef] = new HashMap[String, ActorRef]
-  //val senders: HashSet[ActorRef] = new HashSet[ActorRef]
+  val senders: HashSet[ActorRef] = new HashSet[ActorRef]
   //self.faultHandler = OneForOneStrategy(List(classOf[Exception]),5, 5000)
   val log = Logging(context.system, this)
   log.info("ChatServer is starting up...")
-  
-  
+
   def receive = sessionManagement orElse chatManagement
 
   protected def sessionManagement: Receive = {
     case Login(username) =>
-      println(this, "User [%s] has logged in".format(username))
+      log.info("User [%s] has logged in".format(username))
       val session = context.actorOf(Props(classOf[Session], username, storage))
       //context.watch(session)
       sessions += (username -> session)
-      //senders +=(sender())
+      senders += (sender())
+      log.info("from %s".format(sender()))
+      sender()!ChatLog(List(username+ ": has logged in"))
     case Logout(username) =>
       val session = sessions(username)
       context.stop(session)
@@ -46,10 +47,15 @@ class ChatServer extends Actor {
   protected def chatManagement: Receive = {
     case msg @ ChatMessage(from, _) => {
       getSession(from).foreach(_ ! msg)
-      getSession(from).foreach(_ forward GetChatLog(from))
+      //getSession(from).foreach(_ forward GetChatLog(from))
       //sender() ! ChatLog (List(msg.message))      
     }
     case msg @ GetChatLog(from) => getSession(from).foreach(_ forward msg)
+    case msg : ChatLog => {
+      log.info("from %s".format(sender()))
+      senders.foreach { x => x!msg }
+    }
+    case _ => log.info("Unknow message form %s".format(sender()))
   }
 
   private def getSession(from: String): Option[ActorRef] = {

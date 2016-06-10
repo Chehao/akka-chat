@@ -14,7 +14,7 @@ class Session(user: String, storage: ActorRef) extends Actor {
   def receive: Actor.Receive = {
     case msg @ ChatMessage(from, message) =>
       userLog ::= message
-      storage ! msg
+      storage forward msg //forward server to storage
 
     case msg @ GetChatLog(_) =>
       storage forward msg

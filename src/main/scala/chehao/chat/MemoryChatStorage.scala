@@ -18,14 +18,17 @@ class MemoryChatStorage extends ChatStorage {
   log.info("Memory-based chat storage is starting up...")
  
   def receive = {
-    case msg @ ChatMessage(from, message) =>
-      log.info("New chat message [%s]".format(message))
+    case msg @ ChatMessage(from, message) =>      
+      log.info("New chat message [%s] from sender : %s".format(message, sender()))
       chatLog ::= message
+      val messageList = chatLog
+      sender()!ChatLog(messageList)
       //atomic { chatLog + message.getBytes("UTF-8") }
  
     case GetChatLog(_) =>
+     
       val messageList = chatLog
-      sender()!(ChatLog(messageList))
+      sender()!ChatLog(messageList)
   }
  
   override def postRestart(reason: Throwable) = chatLog = List()
