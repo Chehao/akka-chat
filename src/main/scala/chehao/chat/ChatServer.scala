@@ -8,6 +8,7 @@ import akka.actor.Props
 import scala.collection.mutable.HashMap
 import akka.event.Logging
 import scala.collection.mutable.HashSet
+import scala.collection.mutable.ListBuffer
 
 object ChatServer {
   def main(args: Array[String]): Unit = {
@@ -21,7 +22,7 @@ class ChatServer extends Actor {
 
   val storage: ActorRef = context.actorOf(Props[MemoryChatStorage], "storage")
   val sessions: HashMap[String, ActorRef] = new HashMap[String, ActorRef]
-  val senders: HashSet[ActorRef] = new HashSet[ActorRef]
+  val publicRoomSenders: HashSet[ActorRef] = new HashSet[ActorRef]
   //self.faultHandler = OneForOneStrategy(List(classOf[Exception]),5, 5000)
   val log = Logging(context.system, this)
   log.info("ChatServer is starting up...")
@@ -31,30 +32,30 @@ class ChatServer extends Actor {
   protected def sessionManagement: Receive = {
     case Login(username) =>
       log.info("User [%s] has logged in".format(username))
-      val session = context.actorOf(Props(classOf[Session], username, storage))
-      //context.watch(session)
+      val session = context.actorOf(Props(classOf[Session], username,sender(), storage))
       sessions += (username -> session)
-      senders += (sender())
+      publicRoomSenders += (sender())
+      
+      //back message 
       log.info("from %s".format(sender()))
-      sender()!ChatLog(List(username+ ": has logged in"))
+      //sender() ! ChatLog(ListBuffer(username + ": has logged in"))
+      getSession(username).foreach(_ ! ChatMessage(username,username + " has logged in")) 
     case Logout(username) =>
       val session = sessions(username)
       context.stop(session)
-      sessions.-=(username)
+      sessions-=(username)
       println(this, "User [%s] has logout ".format(username))
   }
 
   protected def chatManagement: Receive = {
-    case msg @ ChatMessage(from, _) => {
+    case msg @ ChatMessage(from, _) => getSession(from).foreach(_ ! msg) 
+    case msg @ ChatMessageTo(from,to, _) => 
       getSession(from).foreach(_ ! msg)
-      //getSession(from).foreach(_ forward GetChatLog(from))
-      //sender() ! ChatLog (List(msg.message))      
-    }
+      getSession(to).foreach(_!GetChatMessageTo(to,from))
+      
     case msg @ GetChatLog(from) => getSession(from).foreach(_ forward msg)
-    case msg : ChatLog => {
-      log.info("from %s".format(sender()))
-      senders.foreach { x => x!msg }
-    }
+    case msg @ AddFriend(user,friend) => getSession(user).foreach { _ ! msg } 
+    case msg: ChatLog => publicRoomSenders.foreach { x => x ! msg }
     case _ => log.info("Unknow message form %s".format(sender()))
   }
 
@@ -62,7 +63,7 @@ class ChatServer extends Actor {
     if (sessions.contains(from))
       Some(sessions(from))
     else {
-      print(this, "Session expired for %s".format(from))
+      log.info("Session expired for %s".format(from))
       None
     }
   }
