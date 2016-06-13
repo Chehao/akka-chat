@@ -5,7 +5,8 @@ the simple chat system developed by akka & scala
 ### ChatClient 
 the main object of ChatClient
 ### Sender actor
-the sender actor is as proxy to send/received message from ChatServer, and print the message to stdout
+the sender actor is as proxy to send/received message from ChatClient,and communicate to ChatServer, 
+print result message to stdout
 ### ChatServer
 received message from ChatClient, and 
 ! create/destory login session when Login/Logout
