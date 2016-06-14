@@ -13,7 +13,7 @@ trait ChatStorage extends Actor
 class MemoryChatStorage extends ChatStorage {
   //self.lifeCycle = Permanent
 
-  private var chatLog: ListBuffer[String] = ListBuffer("< Room >")
+  private var chatLog: ListBuffer[String] = ListBuffer()
   val friends: HashMap[String, ListBuffer[String]] = HashMap[String, ListBuffer[String]]()
   private val chatMessageStorage: HashMap[String, HashMap[String, ListBuffer[String]]] = HashMap[String, HashMap[String, ListBuffer[String]]]()
 

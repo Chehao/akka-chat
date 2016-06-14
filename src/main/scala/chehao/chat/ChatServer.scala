@@ -22,7 +22,7 @@ class ChatServer extends Actor {
 
   val storage: ActorRef = context.actorOf(Props[MemoryChatStorage], "storage")
   val sessions: HashMap[String, ActorRef] = new HashMap[String, ActorRef]
-  val publicRoomSenders: HashSet[ActorRef] = new HashSet[ActorRef]
+  val roomClient: HashSet[ActorRef] = new HashSet[ActorRef]
   //self.faultHandler = OneForOneStrategy(List(classOf[Exception]),5, 5000)
   val log = Logging(context.system, this)
   log.info("ChatServer is starting up...")
@@ -34,7 +34,7 @@ class ChatServer extends Actor {
       log.info("User [%s] has logged in".format(username))
       val session = context.actorOf(Props(classOf[Session], username,sender(), storage))
       sessions += (username -> session)
-      publicRoomSenders += (sender())
+      roomClient += (sender())
       
       //back message 
       log.info("from %s".format(sender()))
@@ -55,7 +55,7 @@ class ChatServer extends Actor {
       
     case msg @ GetChatLog(from) => getSession(from).foreach(_ forward msg)
     case msg @ AddFriend(user,friend) => getSession(user).foreach { _ ! msg } 
-    case msg: ChatLog => publicRoomSenders.foreach { x => x ! msg }
+    case msg: ChatLog => roomClient.foreach { x => x ! msg }
     case _ => log.info("Unknow message form %s".format(sender()))
   }
 
