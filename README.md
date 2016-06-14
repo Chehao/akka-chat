@@ -1,4 +1,5 @@
-# akka-chat - the simple chat system developed by akka & scala
+# akka-chat - 
+the simple chat system developed by akka & scala
 
 ## Description
 
