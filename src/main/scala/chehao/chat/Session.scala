@@ -24,7 +24,8 @@ class Session(user: String, fromClient: ActorRef, storage: ActorRef) extends Act
       storage ! msg
     
     case msg @ ChatMessageTo(from,to,message)=>
-      storage ! msg
+      storage forward msg
+      
     case msg @ GetChatMessageTo(from,to)=>
       storage ! msg  
       

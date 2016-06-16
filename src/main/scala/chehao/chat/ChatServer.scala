@@ -51,8 +51,9 @@ class ChatServer extends Actor {
     case msg @ ChatMessage(from, _) => getSession(from).foreach(_ ! msg) 
     case msg @ ChatMessageTo(from,to, _) => 
       getSession(from).foreach(_ ! msg)
+    case msg @ ChatMessageToOk(from,to)=>
+      getSession(from).foreach(_!GetChatMessageTo(from,to))
       getSession(to).foreach(_!GetChatMessageTo(to,from))
-      
     case msg @ GetChatLog(from) => getSession(from).foreach(_ forward msg)
     case msg @ AddFriend(user,friend) => getSession(user).foreach { _ ! msg } 
     case msg: ChatLog => roomClient.foreach { x => x ! msg }
